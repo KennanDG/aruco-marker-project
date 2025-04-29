@@ -1,0 +1,1 @@
+This Augmented Reality application is a simple portfolio project for my Computer Vision class at Full Sail University. The technologies used are Python, OpenCV, and numpy.

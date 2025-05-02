@@ -1,9 +1,18 @@
 import cv2
-import numpy
+import numpy as np
 from cv2 import aruco
 
 
 def main():
+
+    # Load calibration metrics
+    camera_calibration = cv2.FileStorage("camera_calibration/camera_calibration.yaml", cv2.FILE_STORAGE_READ)
+    camera_matrix = camera_calibration.getNode("camera_matrix").mat()
+    dist_coeffs = camera_calibration.getNode("dist_coeffs").mat()
+    camera_calibration.release()
+
+    aruco_marker_length = 0.054 # meters
+
 
     # pre-defined ArUco markers
     dict_4x4 = aruco.getPredefinedDictionary(aruco.DICT_4X4_50) 
@@ -38,7 +47,7 @@ def main():
         corners_4x4, ids_4x4, rejected_4x4 = detector_4x4.detectMarkers(grayScale)
 
         # 5x5 detector
-        corners_5x5, ids_5x5, rejected_5x5v = detector_5x5.detectMarkers(grayScale)
+        corners_5x5, ids_5x5, rejected_5x5 = detector_5x5.detectMarkers(grayScale)
 
         # 4x4 detector
         corners_6x6, ids_6x6, rejected_6x6 = detector_6x6.detectMarkers(grayScale)

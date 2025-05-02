@@ -1,5 +1,5 @@
 import cv2
-import numpy
+import numpy as np
 from cv2 import aruco
 
 

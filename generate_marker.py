@@ -2,7 +2,7 @@ import cv2
 from cv2 import aruco
 import matplotlib.pyplot as plt
 
-def main():
+def generate_marker():
     markers = [] # Stores list of Aruco Markers
 
     # pre-defined ArUco markers
@@ -24,4 +24,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    generate_marker()

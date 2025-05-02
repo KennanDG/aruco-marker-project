@@ -47,6 +47,12 @@ def main():
         # Display detected ArUco markers
         if ids_4x4 is not None:
             aruco.drawDetectedMarkers(frame, corners_4x4, ids_4x4)
+
+        if ids_5x5 is not None:
+            aruco.drawDetectedMarkers(frame, corners_5x5, ids_5x5)
+
+        if ids_6x6 is not None:
+            aruco.drawDetectedMarkers(frame, corners_6x6, ids_6x6)
             
         cv2.imshow('Aruco Marker Detection', frame)
 

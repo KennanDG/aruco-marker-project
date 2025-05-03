@@ -2,3 +2,7 @@ opencv-python
 opencv-contrib-python
 numpy
 matplotlib
+PyOpenGL
+PyOpenGL_accelerate
+pygame
+pywavefront

@@ -56,12 +56,42 @@ def main():
         # Display detected ArUco markers
         if ids_4x4 is not None:
             aruco.drawDetectedMarkers(frame, corners_4x4, ids_4x4)
+            
+            # Calculate Pose estimation
+            rvecs_4x4, tvecs_4x4, objPoints_4x4 = aruco.estimatePoseSingleMarkers(
+                corners_4x4,
+                aruco_marker_length, 
+                camera_matrix, 
+                dist_coeffs)
+            
+            # Display axes
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_4x4, tvecs_4x4, 0.03)
 
         if ids_5x5 is not None:
             aruco.drawDetectedMarkers(frame, corners_5x5, ids_5x5)
 
+            # Calculate Pose estimation
+            rvecs_5x5, tvecs_5x5, objPoints_5x5 = aruco.estimatePoseSingleMarkers(
+                corners_5x5,
+                aruco_marker_length, 
+                camera_matrix, 
+                dist_coeffs)
+            
+            # Display axes
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_5x5, tvecs_5x5, 0.03)
+
         if ids_6x6 is not None:
             aruco.drawDetectedMarkers(frame, corners_6x6, ids_6x6)
+
+            # Calculate Pose estimation
+            rvecs_6x6, tvecs_6x6, objPoints_6x6 = aruco.estimatePoseSingleMarkers(
+                corners_6x6,
+                aruco_marker_length, 
+                camera_matrix, 
+                dist_coeffs)
+            
+            # Display axes
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_6x6, tvecs_6x6, 0.03)
             
         cv2.imshow('Aruco Marker Detection', frame)
 

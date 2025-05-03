@@ -20,8 +20,9 @@ def calibrate(showPics=True):
     img_dir = 'camera_calibration/calibration_images'
     img_files = [file for file in os.listdir(img_dir)] # Stores every image in calibration_images directory
 
+
+    # access each image and convert them to grayscale
     for fileName in img_files:
-        # access each image and convert them to grayscale
         img_path = os.path.join(img_dir, fileName)
         img = cv2.imread(img_path)
         grayScale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

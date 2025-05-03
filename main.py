@@ -29,9 +29,18 @@ parameters = aruco.DetectorParameters()
 # Load Spiderman 3D model
 scene = pywavefront.Wavefront("ar_models/Spiderman_Neversoft.obj", create_materials=True, collect_faces=True)
 
-print("Spider-Man model loaded with:", len(scene.mesh_list), "meshes")
-for mesh in scene.mesh_list:
-    print("  ▶", mesh.name, "has", len(mesh.faces), "faces")
+
+# Pose estimation smoothing
+prev_rvec_4x4 = None
+prev_tvec_4x4 = None
+
+prev_rvec_5x5 = None
+prev_tvec_5x5 = None
+
+prev_rvec_6x6 = None
+prev_tvec_6x6 = None
+
+alpha = 0.8 # smoothing factor
 
 
 # initialize OpenGL parameters
@@ -167,11 +176,16 @@ def main():
 
     # AR overlay window
     pygame.init()
+
+    # Match screen dimensions with the camera feed window
     screen_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     screen_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # initialize pygame window
     flags = DOUBLEBUF | OPENGL | RESIZABLE
     pygame.display.set_mode((screen_width, screen_height), flags)
-    initGL(screen_height, screen_height)
+    
+    initGL(screen_height, screen_height) # initialize OpenGL parameters
 
     if not cap.isOpened():
         print("Camera Not available")
@@ -187,7 +201,7 @@ def main():
 
         grayScale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert image to grayscale
 
-        # initialize ArUco detector
+        # initialize ArUco detectors
         detector_4x4 = aruco.ArucoDetector(dict_4x4, parameters)
         detector_5x5 = aruco.ArucoDetector(dict_5x5, parameters)
         detector_6x6 = aruco.ArucoDetector(dict_6x6, parameters)
@@ -199,56 +213,69 @@ def main():
         # 5x5 detector
         corners_5x5, ids_5x5, rejected_5x5 = detector_5x5.detectMarkers(grayScale)
 
-        # 4x4 detector
+        # 6x6 detector
         corners_6x6, ids_6x6, rejected_6x6 = detector_6x6.detectMarkers(grayScale)
 
         
-        # Display detected ArUco markers
+        ###### Display detected ArUco markers ########
+
         if ids_4x4 is not None:
             aruco.drawDetectedMarkers(frame, corners_4x4, ids_4x4)
             
             # Calculate Pose estimation
-            rvecs_4x4, tvecs_4x4, objPoints_4x4 = aruco.estimatePoseSingleMarkers(
+            rvec_4x4, tvec_4x4, objPoints_4x4 = aruco.estimatePoseSingleMarkers(
                 corners_4x4,
                 aruco_marker_length, 
                 camera_matrix, 
-                dist_coeffs)
+                dist_coeffs)            
             
-            # print("Rotation vector:\n", rvecs_4x4)
-            # print("Translation vector:\n", tvecs_4x4)
-            
-            render(rvecs_4x4[0], tvecs_4x4[0], frame)
+            # Ensures only a single rotation & translation vector are used
+            # for rendering
+            rvec_4x4 = rvec_4x4[0]
+            tvec_4x4 = tvec_4x4[0]
+
+
+            # Exponential moving average (EMA) to smooth flickering
+            global prev_rvec_4x4, prev_tvec_5x5
+            if prev_rvec_4x4 is not None:
+                prev_rvec_4x4 = alpha * prev_rvec_4x4 + (1 - alpha) * rvec_4x4
+                prev_tvec_4x4 = alpha * prev_tvec_4x4 + (1 - alpha) * tvec_4x4
+            else:
+                prev_rvec_4x4 = rvec_4x4
+                prev_tvec_4x4 = tvec_4x4
+
+            render(prev_rvec_4x4, prev_tvec_4x4, frame)
 
             pygame.display.flip() # updates entire frame
             
             # Display axes
-            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_4x4[0], tvecs_4x4[0], 0.03)
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec_4x4[0], tvec_4x4[0], 0.03)
 
         if ids_5x5 is not None:
             aruco.drawDetectedMarkers(frame, corners_5x5, ids_5x5)
 
             # Calculate Pose estimation
-            rvecs_5x5, tvecs_5x5, objPoints_5x5 = aruco.estimatePoseSingleMarkers(
+            rvec_5x5, tvec_5x5, objPoints_5x5 = aruco.estimatePoseSingleMarkers(
                 corners_5x5,
                 aruco_marker_length, 
                 camera_matrix, 
                 dist_coeffs)
             
             # Display axes
-            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_5x5, tvecs_5x5, 0.03)
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec_5x5, tvec_5x5, 0.03)
 
         if ids_6x6 is not None:
             aruco.drawDetectedMarkers(frame, corners_6x6, ids_6x6)
 
             # Calculate Pose estimation
-            rvecs_6x6, tvecs_6x6, objPoints_6x6 = aruco.estimatePoseSingleMarkers(
+            rvec_6x6, tvec_6x6, objPoints_6x6 = aruco.estimatePoseSingleMarkers(
                 corners_6x6,
                 aruco_marker_length, 
                 camera_matrix, 
                 dist_coeffs)
             
             # Display axes
-            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_6x6, tvecs_6x6, 0.03)
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec_6x6, tvec_6x6, 0.03)
             
         cv2.imshow('Aruco Marker Detection', frame)
 

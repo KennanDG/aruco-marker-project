@@ -54,6 +54,7 @@ def initGL(height, width):
     glMatrixMode(GL_MODELVIEW) # Transforms 3D objects relative to camera
 
 
+# Draws video feed from camera as the background for the pygame window
 def draw_camera_background(frame):
     frame = cv2.flip(frame, 0)
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -92,7 +93,7 @@ def draw_camera_background(frame):
     glDeleteTextures([int(tex_id)])
 
 
-
+# Draws OpenGL axes in the pygame window
 def axes():
     glBegin(GL_LINES)
     # X - Red
@@ -111,32 +112,24 @@ def axes():
 
 
 
-def draw_test_cube():
-    glBegin(GL_QUADS)
-    glColor3f(1, 0, 0)
-    glVertex3f(-0.05, -0.05, 0)
-    glVertex3f(0.05, -0.05, 0)
-    glVertex3f(0.05, 0.05, 0)
-    glVertex3f(-0.05, 0.05, 0)
-    glEnd()
-
-
-
 def render(rvec, tvec, frame):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
-    draw_camera_background(frame) # draws webcam feed as the background
+    draw_camera_background(frame)
+    
+    # resets current matrix as an identity matrix
     glLoadIdentity() 
 
     # Debugging
     print("tvec:", tvec.flatten())
     print("rvec:", rvec.flatten())
 
-    # Convert OpenCV camera coordinates to OpenGL world coordinates
+
+    ##### Convert OpenCV camera coordinates to OpenGL world coordinates ####
 
     rotation_matrix, _ = cv2.Rodrigues(rvec) # Converts rotation vector into a 3x3 matrix
     view_matrix = np.identity(4) # 4x4 identity matrix
 
-    # Top-left 3x3 block is now the rotation matrix
+    # Top-left 3x3 block has the values from the rotation matrix
     view_matrix[:3, :3] = rotation_matrix 
     
     # Last column is the translation vector
@@ -148,7 +141,7 @@ def render(rvec, tvec, frame):
     # invert matrix to match OpenGL's expected world view
     view_matrix = np.linalg.inv(view_matrix)
 
-    # Step 4: Apply OpenCV → OpenGL axis fix: flip Y and Z
+    # flip Y and Z axes to match OpenGL's coordinate system
     flip_YZ = np.array([
         [1,  0,  0,  0],
         [0, -1,  0,  0],
@@ -156,15 +149,12 @@ def render(rvec, tvec, frame):
         [0,  0,  0,  1]
     ], dtype=np.float32)
 
-    # Step 5: Final view matrix (OpenGL-ready)
-    view_matrix = flip_YZ @ view_matrix
+    view_matrix = flip_YZ @ view_matrix # Apply axes flip to the view matrix
 
     glLoadMatrixf(view_matrix.T) # Load transposed matrix to OpenGL
 
     # Render Spider-Man 3D model
     glScalef(0.1, 0.1, 0.1)
-    # glTranslatef(0, 0, -1.5)
-    # draw_test_cube()
     axes()
     pywavefront.visualization.draw(scene)
 

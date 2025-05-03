@@ -6,3 +6,4 @@ PyOpenGL
 PyOpenGL_accelerate
 pygame
 pywavefront
+pyglet

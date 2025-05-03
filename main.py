@@ -1,27 +1,106 @@
 import cv2
 import numpy as np
 from cv2 import aruco
+from OpenGL.GL import *
+from OpenGL.GLU import *
+import pygame
+from pygame.locals import *
+import pywavefront
+import pywavefront.visualization
+
+
+
+# Load calibration metrics
+camera_calibration = cv2.FileStorage("camera_calibration/camera_calibration.yaml", cv2.FILE_STORAGE_READ)
+camera_matrix = camera_calibration.getNode("camera_matrix").mat()
+dist_coeffs = camera_calibration.getNode("dist_coeffs").mat()
+camera_calibration.release()
+
+aruco_marker_length = 0.054 # meters
+
+
+# pre-defined ArUco markers
+dict_4x4 = aruco.getPredefinedDictionary(aruco.DICT_4X4_50) 
+dict_5x5 = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
+dict_6x6 = aruco.getPredefinedDictionary(aruco.DICT_6X6_250) 
+
+parameters = aruco.DetectorParameters()
+
+# Load Spiderman 3D model
+scene = pywavefront.Wavefront("ar_models/Spiderman_Neversoft.obj", create_materials=True, collect_faces=True)
+
+print("Spider-Man model loaded with:", len(scene.mesh_list), "meshes")
+for mesh in scene.mesh_list:
+    print("  ▶", mesh.name, "has", len(mesh.faces), "faces")
+
+
+# initialize OpenGL parameters
+def initGL(height, width):
+
+    aspect_ratio = width / height
+    glEnable(GL_DEPTH_TEST) # Enables depth buffering
+    
+    # Lighting parameters
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+
+    glEnable(GL_NORMALIZE) # Ensures values are normalized
+    glViewport(0,0, width, height) # Entire window is the rendering area
+
+    # Camera lens settings
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(45, aspect_ratio, 0.01, 100.0)
+    glMatrixMode(GL_MODELVIEW) # Transforms 3D objects relative to camera
+
+
+
+def render(rvec, tvec):
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
+    glLoadIdentity() 
+
+    # glBegin(GL_TRIANGLES)
+    # glColor3f(1, 0, 0)
+    # glVertex3f(0, 1, -5)
+    # glVertex3f(-1, -1, -5)
+    # glVertex3f(1, -1, -5)
+    # glEnd()
+
+
+    # Convert OpenCV camera coordinates to OpenGL world coordinates
+
+    rotation_matrix, _ = cv2.Rodrigues(rvec) # Converts rotation vector into a 3x3 matrix
+    view_matrix = np.identity(4) # 4x4 identity matrix
+
+    # Top-left 3x3 block is now the rotation matrix
+    view_matrix[:3, :3] = rotation_matrix 
+    
+    # Last column is the translation vector
+    view_matrix[:3, 3] = tvec.flatten() 
+
+    # invert matrix to match OpenGL's expected world view
+    view_matrix = np.linalg.inv(view_matrix)
+
+    glLoadMatrixf(view_matrix.T) # Load transposed matrix to OpenGL
+
+
+    # Render Spider-Man 3D model
+    glScalef(0.2, 0.2, 0.2)
+    pywavefront.visualization.draw(scene)
+
+
 
 
 def main():
 
-    # Load calibration metrics
-    camera_calibration = cv2.FileStorage("camera_calibration/camera_calibration.yaml", cv2.FILE_STORAGE_READ)
-    camera_matrix = camera_calibration.getNode("camera_matrix").mat()
-    dist_coeffs = camera_calibration.getNode("dist_coeffs").mat()
-    camera_calibration.release()
-
-    aruco_marker_length = 0.054 # meters
-
-
-    # pre-defined ArUco markers
-    dict_4x4 = aruco.getPredefinedDictionary(aruco.DICT_4X4_50) 
-    dict_5x5 = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
-    dict_6x6 = aruco.getPredefinedDictionary(aruco.DICT_6X6_250) 
-
-    parameters = aruco.DetectorParameters()
-
     cap = cv2.VideoCapture(0) # camera feed
+
+    # AR overlay window
+    pygame.init()
+    screen_width = 640
+    screen_height = 480
+    pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
+    initGL(screen_height, screen_height)
 
     if not cap.isOpened():
         print("Camera Not available")
@@ -64,8 +143,15 @@ def main():
                 camera_matrix, 
                 dist_coeffs)
             
+            # print("Rotation vector:\n", rvecs_4x4)
+            # print("Translation vector:\n", tvecs_4x4)
+            
+            render(rvecs_4x4[0], tvecs_4x4[0])
+
+            pygame.display.flip()
+            
             # Display axes
-            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_4x4, tvecs_4x4, 0.03)
+            cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_4x4[0], tvecs_4x4[0], 0.03)
 
         if ids_5x5 is not None:
             aruco.drawDetectedMarkers(frame, corners_5x5, ids_5x5)
@@ -101,6 +187,7 @@ def main():
 
     
     cap.release()
+    pygame.quit()
     cv2.destroyAllWindows()
 
         

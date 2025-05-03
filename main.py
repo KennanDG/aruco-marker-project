@@ -95,16 +95,8 @@ def draw_camera_background(frame):
 
 def render(rvec, tvec, frame):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
-    draw_camera_background(frame)
+    draw_camera_background(frame) # draws webcam feed as the background
     glLoadIdentity() 
-
-    # glBegin(GL_TRIANGLES)
-    # glColor3f(1, 0, 0)
-    # glVertex3f(0, 1, -5)
-    # glVertex3f(-1, -1, -5)
-    # glVertex3f(1, -1, -5)
-    # glEnd()
-
 
     # Convert OpenCV camera coordinates to OpenGL world coordinates
 
@@ -124,7 +116,7 @@ def render(rvec, tvec, frame):
 
 
     # Render Spider-Man 3D model
-    glScalef(0.2, 0.2, 0.2)
+    glScalef(0.1, 0.1, 0.1)
     pywavefront.visualization.draw(scene)
 
 
@@ -133,10 +125,6 @@ def render(rvec, tvec, frame):
 def main():
 
     cap = cv2.VideoCapture(0) # camera feed
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-
-    
 
     # AR overlay window
     pygame.init()

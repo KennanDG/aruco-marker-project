@@ -54,9 +54,48 @@ def initGL(height, width):
     glMatrixMode(GL_MODELVIEW) # Transforms 3D objects relative to camera
 
 
+def draw_camera_background(frame):
+    frame = cv2.flip(frame, 0)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    height, width, _ = frame_rgb.shape
 
-def render(rvec, tvec):
+    glDisable(GL_DEPTH_TEST)
+    glEnable(GL_TEXTURE_2D)
+
+    tex_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, tex_id)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_rgb)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(0, width, 0, height, -1, 1)
+
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex2f(0, 0)
+    glTexCoord2f(1, 0); glVertex2f(width, 0)
+    glTexCoord2f(1, 1); glVertex2f(width, height)
+    glTexCoord2f(0, 1); glVertex2f(0, height)
+    glEnd()
+
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
+    glEnable(GL_DEPTH_TEST)
+    glDeleteTextures([int(tex_id)])
+
+
+
+def render(rvec, tvec, frame):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
+    draw_camera_background(frame)
     glLoadIdentity() 
 
     # glBegin(GL_TRIANGLES)
@@ -94,12 +133,17 @@ def render(rvec, tvec):
 def main():
 
     cap = cv2.VideoCapture(0) # camera feed
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+    
 
     # AR overlay window
     pygame.init()
-    screen_width = 640
-    screen_height = 480
-    pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
+    screen_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    screen_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    flags = DOUBLEBUF | OPENGL | RESIZABLE
+    pygame.display.set_mode((screen_width, screen_height), flags)
     initGL(screen_height, screen_height)
 
     if not cap.isOpened():
@@ -146,9 +190,9 @@ def main():
             # print("Rotation vector:\n", rvecs_4x4)
             # print("Translation vector:\n", tvecs_4x4)
             
-            render(rvecs_4x4[0], tvecs_4x4[0])
+            render(rvecs_4x4[0], tvecs_4x4[0], frame)
 
-            pygame.display.flip()
+            pygame.display.flip() # updates entire frame
             
             # Display axes
             cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_4x4[0], tvecs_4x4[0], 0.03)

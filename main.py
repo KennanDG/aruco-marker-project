@@ -93,10 +93,43 @@ def draw_camera_background(frame):
 
 
 
+def axes():
+    glBegin(GL_LINES)
+    # X - Red
+    glColor3f(1, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0.1, 0, 0)
+    # Y - Green
+    glColor3f(0, 1, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, 0.1, 0)
+    # Z - Blue
+    glColor3f(0, 0, 1)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, 0, 0.1)
+    glEnd()
+
+
+
+def draw_test_cube():
+    glBegin(GL_QUADS)
+    glColor3f(1, 0, 0)
+    glVertex3f(-0.05, -0.05, 0)
+    glVertex3f(0.05, -0.05, 0)
+    glVertex3f(0.05, 0.05, 0)
+    glVertex3f(-0.05, 0.05, 0)
+    glEnd()
+
+
+
 def render(rvec, tvec, frame):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
     draw_camera_background(frame) # draws webcam feed as the background
     glLoadIdentity() 
+
+    # Debugging
+    print("tvec:", tvec.flatten())
+    print("rvec:", rvec.flatten())
 
     # Convert OpenCV camera coordinates to OpenGL world coordinates
 
@@ -109,14 +142,30 @@ def render(rvec, tvec, frame):
     # Last column is the translation vector
     view_matrix[:3, 3] = tvec.flatten() 
 
+    # Debugging
+    print("View Matrix:\n", view_matrix.flatten())
+
     # invert matrix to match OpenGL's expected world view
     view_matrix = np.linalg.inv(view_matrix)
 
-    glLoadMatrixf(view_matrix.T) # Load transposed matrix to OpenGL
+    # Step 4: Apply OpenCV → OpenGL axis fix: flip Y and Z
+    flip_YZ = np.array([
+        [1,  0,  0,  0],
+        [0, -1,  0,  0],
+        [0,  0, -1,  0],
+        [0,  0,  0,  1]
+    ], dtype=np.float32)
 
+    # Step 5: Final view matrix (OpenGL-ready)
+    view_matrix = flip_YZ @ view_matrix
+
+    glLoadMatrixf(view_matrix.T) # Load transposed matrix to OpenGL
 
     # Render Spider-Man 3D model
     glScalef(0.1, 0.1, 0.1)
+    # glTranslatef(0, 0, -1.5)
+    # draw_test_cube()
+    axes()
     pywavefront.visualization.draw(scene)
 
 

@@ -26,8 +26,16 @@ dict_6x6 = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
 
 parameters = aruco.DetectorParameters()
 
+spider_man = {
+    "body": pywavefront.Wavefront("ar_models/Spiderman_Neversoft.obj", collect_faces=True),
+    "eye_1": pywavefront.Wavefront("ar_models/Eye1.obj", collect_faces=True),
+    "eye_2": pywavefront.Wavefront("ar_models/Eye2.obj", collect_faces=True),
+}
+
 # Load Spiderman 3D model
-scene = pywavefront.Wavefront("ar_models/Spiderman_Neversoft.obj", create_materials=True, collect_faces=True)
+body = pywavefront.Wavefront("ar_models/Spiderman_Neversoft.obj", collect_faces=True)
+eye_1 = pywavefront.Wavefront("ar_models/Eye1.obj", collect_faces=True)
+eye_2 = pywavefront.Wavefront("ar_models/Eye2.obj", collect_faces=True)
 
 
 # Pose estimation smoothing
@@ -120,7 +128,7 @@ def axes():
     glEnd()
 
 
-
+# Draws 3D model in the pygame window
 def render(rvec, tvec, frame):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clears window
     draw_camera_background(frame)
@@ -164,8 +172,14 @@ def render(rvec, tvec, frame):
 
     # Render Spider-Man 3D model
     glScalef(0.1, 0.1, 0.1)
-    axes()
-    pywavefront.visualization.draw(scene)
+    # axes()
+
+    pywavefront.visualization.draw(eye_1)
+    pywavefront.visualization.draw(eye_2)
+    pywavefront.visualization.draw(body)
+    
+    # for obj in spider_man.values():
+    #     pywavefront.visualization.draw(obj)
 
 
 

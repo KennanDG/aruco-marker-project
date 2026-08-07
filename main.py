@@ -7,6 +7,7 @@ import pygame
 from pygame.locals import *
 import pywavefront
 import pywavefront.visualization
+from object_tracking import detect_moving_objects
 
 
 
@@ -192,7 +193,8 @@ def draw(frame, corners, marker_id):
 
 def main():
 
-    cap = cv2.VideoCapture(0) # camera feed
+    cap = cv2.VideoCapture(0)  # camera feed
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2()  # object detection/tracking
 
     # AR overlay window
     pygame.init()
@@ -219,7 +221,10 @@ def main():
             print("Error: Failed to capture camera feed")
             break
 
-        grayScale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # Convert image to grayscale
+        grayScale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Convert image to grayscale
+
+        # Object detection / tracking across the screen
+        frame, _ = detect_moving_objects(frame, bg_subtractor)
 
         # initialize ArUco detectors
         detector_4x4 = aruco.ArucoDetector(dict_4x4, parameters)

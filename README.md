@@ -1,1 +1,1 @@
-This Augmented Reality application is a simple portfolio project for my Computer Vision class at Full Sail University. The technologies used are Python, OpenCV, numpy, and a working webcam.
+This Augmented Reality application is a simple portfolio project for my Computer Vision class at Full Sail University. It features Aruco marker-based AR overlay and also includes basic moving object detection and tracking using background subtraction. Technologies used: Python, OpenCV, numpy, and a working webcam.
